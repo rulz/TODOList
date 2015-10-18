@@ -149,4 +149,79 @@ class TaskApiTest(TestCaseUtils, TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(content['detail'], 'No encontrado.')
 
+class UserApiTest(TestCaseUtils, TestCase):
+    """ 
+    Testeando API Task CRU
+    """
 
+    def setUp(self):
+        self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
+        self.task = Task.objects.create(name='tarea', description='description tarea')
+
+        self.application = Application(
+            name="todo",
+            user=self.user,
+            client_type=Application.CLIENT_PUBLIC,
+            authorization_grant_type=Application.GRANT_PASSWORD,
+        )
+        self.application.save()
+
+        self.token_request_data = {
+            'grant_type': 'password',
+            'username': 'rulz',
+            'password': '12345'
+        }
+
+        self.auth_headers = self.get_basic_auth_header(
+            urllib.quote_plus(self.application.client_id),
+            urllib.quote_plus(self.application.client_secret))
+
+        self.response = self.client.post(reverse('oauth2_provider:token'), 
+            data=self.token_request_data, **self.auth_headers)
+        content = json.loads(self.response.content.decode("utf-8"))
+        self.headers = {'Authorization': 'Bearer %(token)s' % {'token': content['access_token']}}
+
+    def test_list_user(self):
+        response = self.client.get(reverse('users-list'), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['count'], 1)
+        self.assertEqual(content['results'][0]['username'], self.user.username)
+        self.assertEqual(content['results'][0]['email'], self.user.email)
+
+    def test_list_user_two(self):
+        user = User.objects.create_user('rulz1', 'rulz0001@gmail.com', '12345')
+        response = self.client.get(reverse('users-list'), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['count'], 2)
+        self.assertEqual(content['results'][0]['username'], self.user.username)
+        self.assertEqual(content['results'][0]['email'], self.user.email)
+        self.assertEqual(content['results'][1]['username'], user.username)
+        self.assertEqual(content['results'][1]['email'], user.email)
+
+    def test_detail_user(self):
+        response = self.client.get(reverse('users-detail', kwargs={'pk':1}), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['username'], self.user.username)
+        self.assertEqual(content['email'], self.user.email)
+
+    def test_update_user(self):
+        data = {'username':'rulz_update', 'password':'1234'}
+        response = self.client.put(reverse('users-detail', kwargs={'pk':1}), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['username'], data['username'])
+        self.assertNotEqual(content['username'], self.user.username)
+        self.assertNotEqual(content['password'], self.user.password)
+
+    def test_create_user(self):
+        data = {'username':'rulz_new', 'email':'rulznew@gmail.com','password':'1234'}
+        response = self.client.post(reverse('users-list'), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(content['username'], data['username'])
+        self.assertEqual(content['email'], data['email'])
