@@ -14,7 +14,7 @@ try:
 except ImportError:
     import urllib
 
-import requests
+import requests, json
 
 Application = get_application_model()
 
@@ -56,30 +56,84 @@ class TaskApiTest(TestCaseUtils, TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
+        self.task = Task.objects.create(name='tarea', description='description tarea')
+
         self.application = Application(
             name="todo",
             user=self.user,
             client_type=Application.CLIENT_PUBLIC,
-            authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS,
+            authorization_grant_type=Application.GRANT_PASSWORD,
         )
         self.application.save()
 
-        token_request_data = {
+        self.token_request_data = {
             'grant_type': 'password',
             'username': 'rulz',
             'password': '12345'
         }
 
-        auth_headers = self.get_basic_auth_header(
+        self.auth_headers = self.get_basic_auth_header(
             urllib.quote_plus(self.application.client_id),
             urllib.quote_plus(self.application.client_secret))
-        
-        self.response = self.client.post(reverse('oauth2_provider:token'), data=token_request_data, **auth_headers)
 
-    def test_token(self):
-        data = self.token_request_data
-        r = requests.post('http://localhost:8000/o/token/', 
-            data=data)
-        print r.json()
-        self.assertEqual(self.response.status_code, 200)
+        self.response = self.client.post(reverse('oauth2_provider:token'), data=self.token_request_data, **self.auth_headers)
+        content = json.loads(self.response.content.decode("utf-8"))
+        self.headers = {'Authorization': 'Bearer %(token)s' % {'token': content['access_token']}}
+
+    def test_list_task(self):
+        response = self.client.get(reverse('tasks-list'), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['count'], 1)
+        self.assertEqual(content['results'][0]['name'], self.task.name)
+        self.assertEqual(content['results'][0]['description'], self.task.description)
+        self.assertEqual(content['results'][0]['assigned_to'], self.task.assigned_to)
+        self.assertFalse(content['results'][0]['done'])
+
+    def test_list_task_two(self):
+        task = Task.objects.create(name='tarea2', description='description tarea2', done=True)
+        response = self.client.get(reverse('tasks-list'), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['count'], 2)
+        self.assertEqual(content['results'][0]['name'], self.task.name)
+        self.assertEqual(content['results'][0]['description'], self.task.description)
+        self.assertEqual(content['results'][0]['assigned_to'], self.task.assigned_to)
+        self.assertFalse(content['results'][0]['done'])
+        self.assertEqual(content['results'][1]['name'], task.name)
+        self.assertEqual(content['results'][1]['description'], task.description)
+        self.assertEqual(content['results'][1]['assigned_to'], task.assigned_to)
+        self.assertTrue(content['results'][1]['done'])
+
+    def test_detail_task(self):
+        response = self.client.get(reverse('tasks-detail', kwargs={'pk':1}), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['name'], self.task.name)
+        self.assertEqual(content['description'], self.task.description)
+        self.assertEqual(content['assigned_to'], self.task.assigned_to)
+        self.assertFalse(content['done'])
+
+    def test_update_task(self):
+        data = {'name':'tarea update', 'description':'update', 'done':True}
+        response = self.client.put(reverse('tasks-detail', kwargs={'pk':1}), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['name'], data['name'])
+        self.assertEqual(content['description'], data['description'])
+        self.assertEqual(content['assigned_to'], self.task.assigned_to)
+        self.assertTrue(content['done'])
+
+    def test_create_task(self):
+        data = {'name':'new tarea', 'description':'new descripcion'}
+        response = self.client.post(reverse('tasks-list'), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(content['name'], data['name'])
+        self.assertEqual(content['description'], data['description'])
+        self.assertEqual(content['assigned_to'], None)
+        self.assertFalse(content['done'])
+
 
