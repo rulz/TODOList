@@ -21,7 +21,8 @@ class Migration(migrations.Migration):
                 ('done', models.BooleanField(default=False, verbose_name='Done')),
                 ('created', models.DateTimeField(auto_now_add=True, verbose_name='Created')),
                 ('modified', models.DateTimeField(auto_now=True, verbose_name='Modified')),
-                ('assigned_to', models.ForeignKey(verbose_name='Assigned to', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('assigned_to', models.ForeignKey(related_name='assigneds', verbose_name='Assigned to', blank=True, to=settings.AUTH_USER_MODEL, null=True)),
+                ('owner', models.ForeignKey(related_name='owners', verbose_name='Owner', to=settings.AUTH_USER_MODEL)),
             ],
             options={
                 'verbose_name': 'Task list',

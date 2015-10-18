@@ -25,11 +25,11 @@ class TaskModelTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
         self.user2 = User.objects.create_user('rulz2', 'rulz0001@gmail.com', '12345')
-        self.task = Task.objects.create(name='tarea', description='description tarea')
+        self.task = Task.objects.create(name='tarea', description='description tarea', owner=self.user)
         #assigned_to, name, description, done, created, modified 
 
     def test_create(self):
-        task = Task.objects.create(name='tarea', description='description tarea')
+        task = Task.objects.create(name='tarea', description='description tarea', owner=self.user)
         self.assertEquals(task.name, 'tarea')
         self.assertEquals(task.description, 'description tarea')
         self.assertEquals(task.assigned_to, None)
@@ -61,7 +61,10 @@ class TaskApiTest(TestCaseUtils, TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
-        self.task = Task.objects.create(name='tarea', description='description tarea')
+        self.task = Task.objects.create(name='tarea', description='description tarea', owner=self.user)
+        self.user2 = User.objects.create_user('rulz1', 'raulsetron1@gmail.com', '12345')
+        self.task2 = Task.objects.create(name='tarea', description='description tarea', owner=self.user2, 
+            assigned_to=self.user)
 
         self.application = Application(
             name="todo",
@@ -85,22 +88,33 @@ class TaskApiTest(TestCaseUtils, TestCase):
         content = json.loads(self.response.content.decode("utf-8"))
         self.headers = {'Authorization': 'Bearer %(token)s' % {'token': content['access_token']}}
 
+    def test_create_task(self):
+        data = {'name':'new tarea', 'description':'new descripcion'}
+        response = self.client.post(reverse('tasks-list'), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(content['name'], data['name'])
+        self.assertEqual(content['description'], data['description'])
+        self.assertEqual(content['assigned_to'], None)
+        self.assertFalse(content['done'])
+
     def test_list_task(self):
         response = self.client.get(reverse('tasks-list'), **self.headers)
         content = json.loads(response.content.decode("utf-8"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(content['count'], 1)
+        self.assertEqual(content['count'], 2)
         self.assertEqual(content['results'][0]['name'], self.task.name)
         self.assertEqual(content['results'][0]['description'], self.task.description)
         self.assertEqual(content['results'][0]['assigned_to'], self.task.assigned_to)
         self.assertFalse(content['results'][0]['done'])
 
-    def test_list_task_two(self):
-        task = Task.objects.create(name='tarea2', description='description tarea2', done=True)
+    def test_list_task_three(self):
+        task = Task.objects.create(name='tarea2', description='description tarea2', done=True, owner=self.user)
         response = self.client.get(reverse('tasks-list'), **self.headers)
         content = json.loads(response.content.decode("utf-8"))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(content['count'], 2)
+        self.assertEqual(content['count'], 3)
         self.assertEqual(content['results'][0]['name'], self.task.name)
         self.assertEqual(content['results'][0]['description'], self.task.description)
         self.assertEqual(content['results'][0]['assigned_to'], self.task.assigned_to)
@@ -130,17 +144,6 @@ class TaskApiTest(TestCaseUtils, TestCase):
         self.assertEqual(content['assigned_to'], self.task.assigned_to)
         self.assertTrue(content['done'])
 
-    def test_create_task(self):
-        data = {'name':'new tarea', 'description':'new descripcion'}
-        response = self.client.post(reverse('tasks-list'), data=json.dumps(data), 
-            content_type='application/json',**self.headers)
-        content = json.loads(response.content.decode("utf-8"))
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(content['name'], data['name'])
-        self.assertEqual(content['description'], data['description'])
-        self.assertEqual(content['assigned_to'], None)
-        self.assertFalse(content['done'])
-
     def test_delete_task(self):
         response = self.client.delete(reverse('tasks-detail', kwargs={'pk':1}), **self.headers)
         self.assertEqual(response.status_code, 204)
@@ -149,6 +152,27 @@ class TaskApiTest(TestCaseUtils, TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(content['detail'], 'No encontrado.')
 
+    def test_assigned_to_task(self):
+        url_assigned = reverse('users-detail', kwargs={'pk':self.user2.pk})
+        data = {'name':'tarea update', 'description':'update', 'assigned_to':url_assigned}
+        response = self.client.put(reverse('tasks-detail', kwargs={'pk':1}), data=json.dumps(data), 
+            content_type='application/json',**self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['assigned_to'], 'http://testserver'+url_assigned)
+
+    def test_owner_and_assigned_my_task(self):
+        url_assigned = reverse('users-detail', kwargs={'pk':self.user.pk})
+        response = self.client.get(reverse('tasks-list'), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(content['count'], 2)
+        self.assertEqual(content['results'][1]['name'], self.task2.name)
+        self.assertEqual(content['results'][1]['description'], self.task2.description)
+        self.assertEqual(content['results'][1]['assigned_to'], 'http://testserver'+url_assigned)
+        self.assertFalse(content['results'][1]['done'])
+
+
 class UserApiTest(TestCaseUtils, TestCase):
     """ 
     Testeando API Task CRU
@@ -156,7 +180,7 @@ class UserApiTest(TestCaseUtils, TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
-        self.task = Task.objects.create(name='tarea', description='description tarea')
+        self.task = Task.objects.create(name='tarea', description='description tarea', owner=self.user)
 
         self.application = Application(
             name="todo",

@@ -3,7 +3,8 @@ from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 class Task(models.Model):
-    assigned_to = models.ForeignKey('auth.User', verbose_name=_('Assigned to'), blank=True, null=True)
+    owner = models.ForeignKey('auth.User', verbose_name=_('Owner'), related_name='owners') 
+    assigned_to = models.ForeignKey('auth.User', verbose_name=_('Assigned to'), blank=True, null=True, related_name='assigneds')
     name = models.CharField(max_length=50, verbose_name=_('Name'))
     description = models.TextField(verbose_name=_('Description'), blank=True)
     done = models.BooleanField(default=False, verbose_name=_('Done'))
@@ -16,3 +17,6 @@ class Task(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def get_owner_url(self):
+        return settings.SITE_URL + reverse('users-detail', kwargs={'pk': self.owner.pk})
