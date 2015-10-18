@@ -1,0 +1,9 @@
+Django
+django-extensions
+ipython
+dj-database-url
+pytz
+djangorestframework
+markdown
+django-filter
+django-oauth-toolkit
