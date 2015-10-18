@@ -1,9 +1,18 @@
+# encoding: utf-8
 from django.db import models
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
 
 
 class Task(models.Model):
+    """ 
+    - Modelo Tarea, campos que son obligatorio para crear una tarea son:
+        owner(ForeignKey) y name(CharField). 
+    
+    - campos opcionales:
+        assigned_to(ForeignKey), description(TextField) y done(BooleanField).
+    """
+
     owner = models.ForeignKey(
         'auth.User', verbose_name=_('Owner'), related_name='owners'
     )
@@ -28,8 +37,8 @@ class Task(models.Model):
     )
 
     class Meta:
-        verbose_name = _('Task list')
-        verbose_name_plural = _('Task lists')
+        verbose_name = _('Task')
+        verbose_name_plural = _('Tasks')
 
     def __unicode__(self):
         return self.name

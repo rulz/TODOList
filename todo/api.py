@@ -31,8 +31,23 @@ class UserViewSet(mixins.CreateModelMixin,
                   mixins.UpdateModelMixin,
                   viewsets.GenericViewSet):
     """
-    CRU del modelo User
+    CRU del modelo User. Las Librería que ocupo son:
+
+        mixins.CreateModelMixin (Crear Usuario)
+        mixins.ListModelMixin (Listar Usuario)
+        mixins.RetrieveModelMixin (Detalle Usuario)
+        mixins.UpdateModelMixin (Actualizar Usuario)
+
+        GenericViewSet (para ocupar métodos get_object y get_queryset)
+
+    no está permitido eliminar un usuario, si lo desea realizar agregar lo siguiente:
+
+        mixins.DestroyModelMixin
+
+    métodos:
+        perform_create, perform_update: encripta la clave del usuario
     """
+
     permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -78,10 +93,21 @@ class TaskViewSet(mixins.CreateModelMixin,
                   mixins.RetrieveModelMixin,
                   mixins.UpdateModelMixin,
                   mixins.DestroyModelMixin,
-                  viewsets.ViewSet,
                   viewsets.GenericViewSet):
     """
-    CRUD del modelo Task
+    CRU del modelo Task. Las Librería que ocupo son:
+
+        mixins.CreateModelMixin (Crear Tarea)
+        mixins.ListModelMixin (Listar Tarea)
+        mixins.RetrieveModelMixin (Detalle Tarea)
+        mixins.UpdateModelMixin (Actualizar Tarea)
+        mixins.DestroyModelMixin (Eliminar Tarea)
+
+        GenericViewSet (para ocupar métodos get_object y get_queryset, permission_classes)
+
+    métodos:
+        perform_create: relaciono al creado de la tarea como dueño
+        get_queryset: muestros las tareas que soy dueño y las que estoy asignado
     """
     permission_classes = [permissions.IsAuthenticated, TokenHasReadWriteScope]
     serializer_class = TaskSerializer

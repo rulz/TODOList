@@ -21,7 +21,7 @@ Application = get_application_model()
 
 class TaskModelTest(TestCase):
     """ 
-    Testeando el modelo creado 
+    Testeando el CRUD del modelo Task 
     """
 
     def setUp(self):
@@ -44,6 +44,15 @@ class TaskModelTest(TestCase):
         self.assertFalse(task.done)
         self.assertNotEquals(task.created, task.modified)
 
+    def test_detail(self):
+        task = Task.objects.latest('pk')
+        self.assertEquals(task.name, 'tarea')
+        self.assertEquals(task.description, 'description tarea')
+        self.assertEquals(task.assigned_to, None)
+        self.assertEquals(task.created.date(), datetime.now().date())
+        self.assertFalse(task.done)
+        self.assertNotEquals(task.created, task.modified)
+
     def test_assigned_to_task(self):
         self.task.assigned_to = self.user
         self.assertEquals(self.task.name, 'tarea')
@@ -60,10 +69,20 @@ class TaskModelTest(TestCase):
         self.assertTrue(self.task.done)
         self.assertEquals(type(self.task.done), bool)
 
+    def test_delete(self):
+        task = Task.objects.latest('pk')
+        pk = task.pk
+        task.delete()
+        _task = Task.objects.filter(pk__in=[pk])
+        self.assertEquals(_task.count(), 0)
+
 
 class TaskApiTest(TestCaseUtils, TestCase):
     """ 
     Testeando API Task CRUD
+
+    Application, get_basic_auth_header: es de la librería oauth2_provider para asignarme un token y 
+    poder logearme en la app
     """
 
     def setUp(self):
@@ -208,6 +227,9 @@ class TaskApiTest(TestCaseUtils, TestCase):
 class UserApiTest(TestCaseUtils, TestCase):
     """ 
     Testeando API Task CRU
+
+    Application, get_basic_auth_header: es de la librería oauth2_provider para asignarme un token y 
+    poder logearme en la app
     """
 
     def setUp(self):
@@ -215,7 +237,7 @@ class UserApiTest(TestCaseUtils, TestCase):
         self.task = Task.objects.create(
             name='tarea', description='description tarea', owner=self.user
         )
-        
+
         #oauth2_provider para crear los token al usuario que se loguea
         self.application = Application(
             name="todo",
