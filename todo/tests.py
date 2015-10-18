@@ -14,7 +14,7 @@ try:
 except ImportError:
     import urllib
 
-import requests, json
+import json
 
 Application = get_application_model()
 
@@ -55,6 +55,9 @@ class TaskModelTest(TestCase):
         self.assertEquals(type(self.task.done), bool)
 
 class TaskApiTest(TestCaseUtils, TestCase):
+    """ 
+    Testeando API Task CRUD
+    """
 
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
@@ -137,5 +140,13 @@ class TaskApiTest(TestCaseUtils, TestCase):
         self.assertEqual(content['description'], data['description'])
         self.assertEqual(content['assigned_to'], None)
         self.assertFalse(content['done'])
+
+    def test_delete_task(self):
+        response = self.client.delete(reverse('tasks-detail', kwargs={'pk':1}), **self.headers)
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get(reverse('tasks-detail', kwargs={'pk':1}), **self.headers)
+        content = json.loads(response.content.decode("utf-8"))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(content['detail'], 'No encontrado.')
 
 
