@@ -19,7 +19,9 @@ import requests, json
 Application = get_application_model()
 
 class TaskModelTest(TestCase):
-
+    """ 
+    Testeando el modelo creado 
+    """
     def setUp(self):
         self.user = User.objects.create_user('rulz', 'raulsetron@gmail.com', '12345')
         self.user2 = User.objects.create_user('rulz2', 'rulz0001@gmail.com', '12345')
