@@ -3,8 +3,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
-from rest_framework import serializers, viewsets, mixins, permissions, generics
-from rest_framework.decorators import detail_route, list_route
+from rest_framework import serializers, viewsets, mixins, permissions
 
 from oauth2_provider.ext.rest_framework import TokenHasReadWriteScope
 
@@ -26,7 +25,6 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 
-
 class UserViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   mixins.RetrieveModelMixin,
@@ -43,7 +41,7 @@ class UserViewSet(mixins.CreateModelMixin,
     paginate_by_param = 'page_size'
     max_paginate_by = 100
 
-    #encriptar la clave
+    # encriptar la clave
     def perform_create(self, serializer):
         user = serializer.save()
         user.set_password(str(user.password))
@@ -62,7 +60,6 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
     con los campos del modelo, además para la relación con otro modelo se refleje 
     mediante una url
     """
-    #owner = serializers.CharField(source='get_owner_url', read_only=True)
     done = serializers.BooleanField(required=False)
 
     class Meta:
@@ -76,14 +73,13 @@ class TaskSerializer(serializers.HyperlinkedModelSerializer):
         }
 
 
-
 class TaskViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.RetrieveModelMixin,
-                      mixins.UpdateModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.ViewSet,
-                      viewsets.GenericViewSet):
+                  mixins.ListModelMixin,
+                  mixins.RetrieveModelMixin,
+                  mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin,
+                  viewsets.ViewSet,
+                  viewsets.GenericViewSet):
     """
     CRUD del modelo Task
     """
@@ -94,11 +90,12 @@ class TaskViewSet(mixins.CreateModelMixin,
     paginate_by_param = 'page_size'
     max_paginate_by = 100
 
-
+    # agrego al usuario que creo la tarea como dueño
     def perform_create(self, serializer):
         instance = serializer.save(owner=self.request.user)
         return instance
 
+    # filtro las tareas que me asignaron y que cree yo
     def get_queryset(self):
         qs = Q(owner=self.request.user) | Q(assigned_to=self.request.user)
         q = Task.objects.filter(qs)
