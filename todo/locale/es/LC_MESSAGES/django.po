@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2015-10-17 13:47-0300\n"
+"POT-Creation-Date: 2015-10-19 15:03-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,34 +18,38 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: models.py:5
+#: models.py:17
+msgid "Owner"
+msgstr "Dueño"
+
+#: models.py:20
 msgid "Assigned to"
 msgstr "Asignado a"
 
-#: models.py:6
+#: models.py:24
 msgid "Name"
 msgstr "Nombre"
 
-#: models.py:7
+#: models.py:27
 msgid "Description"
 msgstr "Descripción"
 
-#: models.py:8
+#: models.py:30
 msgid "Done"
 msgstr "Hecho"
 
-#: models.py:9
+#: models.py:33
 msgid "Created"
 msgstr "Creado"
 
-#: models.py:10
+#: models.py:36
 msgid "Modified"
 msgstr "Modificado"
 
-#: models.py:13
-msgid "Task list"
-msgstr "Lista de tareas"
+#: models.py:40
+msgid "Task"
+msgstr "Tarea"
 
-#: models.py:14
-msgid "Task lists"
-msgstr "Lista de tareas"
+#: models.py:41
+msgid "Tasks"
+msgstr "Tareas"
