@@ -120,6 +120,7 @@ class TaskViewSet(mixins.CreateModelMixin,
     def perform_create(self, serializer):
         instance = serializer.save(owner=self.request.user)
         return instance
+    
 
     # filtro las tareas que me asignaron y que cree yo
     def get_queryset(self):
