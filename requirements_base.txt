@@ -8,3 +8,4 @@ markdown
 django-filter
 django-oauth-toolkit
 requests
+dj-static==0.0.6
