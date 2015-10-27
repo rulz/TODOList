@@ -1,4 +1,5 @@
-from django.conf.urls import url, patterns, include
+from django.conf.urls import url#, patterns, include
+from . import views
 
 from .api import UserViewSet, TaskViewSet
 from rest_framework.routers import DefaultRouter
